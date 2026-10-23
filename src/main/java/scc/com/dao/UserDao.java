@@ -130,4 +130,27 @@ public class UserDao {
         }
         return pendingList;
     }
+
+
+
+    public boolean approveUser(int userID){
+        String sql = "UPDATE users SET status = 'APPROVED' WHERE id = ?";
+
+        try(Connection conn = DatabaseConnection.getConnection()){
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+
+            pstmt.setInt(1, userID);
+            int rowsUpdated = pstmt.executeUpdate();
+
+            if(rowsUpdated > 0 ){
+                System.out.println(" ->USER ID: "+userID+" APPROVED SUCCESSFULLY!");
+                return  true;
+            }else {
+                System.out.println("ID NOT FOUND.");
+            }
+        }catch (SQLException e){
+            System.out.println("Error Fetching User: "+e.getMessage());
+        }
+        return  false;
+    }
 }

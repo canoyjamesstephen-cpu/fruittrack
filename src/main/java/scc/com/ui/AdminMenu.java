@@ -20,12 +20,12 @@ public class AdminMenu {
 
         while (loggedIn) {
             System.out.println("============================");
-            System.out.println("====== ADMIN DASHBOARD =====");
+            System.out.println("       ADMIN DASHBOARD      ");
             System.out.println("============================");
             System.out.println("1. View All User");
-            System.out.println("2. Add User");
-            System.out.println("3. View Pending User Approvals");
-            System.out.println("4. Approve User Registration");
+            System.out.println("2. View Pending Users");
+            System.out.println("3. Approve User Registration");
+            System.out.println("4. Add User");
             System.out.println("5. Update User role / Status");
             System.out.println("6. Delete User");
             System.out.println("7. Logout");
@@ -36,6 +36,8 @@ public class AdminMenu {
 
             switch (select) {
                 case 1 -> viewAllUser();
+                case 2 -> viewPendingUser();
+                case 3 -> approveUser();
                 case 7 -> loggedIn = false;
                 default -> System.out.println("-> [ERROR] Invalid Option.");
             }
@@ -65,6 +67,26 @@ public class AdminMenu {
 
     private void viewPendingUser(){
         displayUserTable(userDao.getPendingUser(), "PENDING APPROVALS");
+    }
+
+    private void approveUser(){
+        List<User> pendingUsers = userDao.getPendingUser();
+        displayUserTable(pendingUsers, "PENDING APPROVALS");
+
+        if (pendingUsers.isEmpty()){
+            return;
+        }
+        System.out.print("Enter User ID to Approve (or 0 to cancel): ");
+        int userID = scanner.nextInt();
+        if (userID == 0){
+            System.out.println("-> Operation Cancelled by the User");
+        }
+        boolean exits = pendingUsers.stream().anyMatch(u -> u.id() ==userID );
+        if (!exits){
+            System.out.println("[ERROR] User ID not found.");
+            return;
+        }
+        userDao.approveUser(userID);
     }
 
 }

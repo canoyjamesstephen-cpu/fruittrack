@@ -49,6 +49,7 @@ public class Authentication {
                         break;
                     case "3":
                         role = "DRIVER";
+                        break;
                     default:
                         role = null;
                         break;

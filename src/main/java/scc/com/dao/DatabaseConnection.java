@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class DatabaseConnection {
-    private static final String DB_URL = "jdbc:sqlite:fruitt2rack.db";
+    private static final String DB_URL = "jdbc:sqlite:fruittrack.db";
 
     public static Connection getConnection() throws SQLException{
         Connection conn = DriverManager.getConnection(DB_URL);
