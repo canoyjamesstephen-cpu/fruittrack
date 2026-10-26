@@ -18,7 +18,7 @@ public class Authentication {
     public void start(){
 
         System.out.println("====================================");
-        System.out.println("Employee Payroll Record System");
+        System.out.println("Fruit tracking Record System");
         System.out.println("====================================");
         System.out.println("1. Login");
         System.out.println("2. Register");
