@@ -11,6 +11,8 @@ import java.util.List;
 
 public class UserDao {
 
+    private final ActivityLogDao logDao = new ActivityLogDao(); // ADDED
+
     public UserDao() {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement()) {
@@ -108,7 +110,7 @@ public class UserDao {
         return usersList;
     }
 
-    public  List<User> getPendingUser(){
+    public List<User> getPendingUser(){
         List<User> pendingList = new ArrayList<>();
         String sql = "SELECT * FROM users WHERE status = 'PENDING'";
 
@@ -131,9 +133,8 @@ public class UserDao {
         return pendingList;
     }
 
-
-
-    public boolean approveUser(int userID){
+    // UPDATED: Added adminId parameter to record audit trail
+    public boolean approveUser(int userID, int adminId){
         String sql = "UPDATE users SET status = 'APPROVED' WHERE id = ?";
 
         try(Connection conn = DatabaseConnection.getConnection()){
@@ -144,20 +145,20 @@ public class UserDao {
 
             if(rowsUpdated > 0 ){
                 System.out.println(" ->USER ID: "+userID+" APPROVED SUCCESSFULLY!");
-                return  true;
+                // ADDED: Log Action Trigger
+                logDao.logAction(adminId, "USER_APPROVED", "Admin ID " + adminId + " approved account for User ID " + userID);
+                return true;
             }else {
                 System.out.println("ID NOT FOUND.");
             }
         }catch (SQLException e){
             System.out.println("Error Fetching User: "+e.getMessage());
         }
-        return  false;
+        return false;
     }
 
-    // ---------------------------------------------------------------
-    // NEW: Update a user's role and status
-    // ---------------------------------------------------------------
-    public boolean updateUserRoleAndStatus(int userId, String newRole, String newStatus) {
+    // UPDATED: Added adminId parameter to record audit trail
+    public boolean updateUserRoleAndStatus(int userId, String newRole, String newStatus, int adminId) {
         String sql = "UPDATE users SET roles = ?, status = ? WHERE id = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -171,6 +172,8 @@ public class UserDao {
 
             if (rowsUpdated > 0) {
                 System.out.println(" -> USER ID: " + userId + " UPDATED SUCCESSFULLY!");
+                // ADDED: Log Action Trigger
+                logDao.logAction(adminId, "USER_UPDATED", "Admin ID " + adminId + " updated User ID " + userId + " role to " + newRole + " and status to " + newStatus);
                 return true;
             } else {
                 System.out.println(" -> ID NOT FOUND.");
