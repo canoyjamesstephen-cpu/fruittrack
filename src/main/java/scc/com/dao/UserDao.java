@@ -183,4 +183,48 @@ public class UserDao {
         }
         return false;
     }
+
+    // ADDED: Admin creates a user directly (with chosen role and status)
+    public boolean addUser(String username, String password, String role, String status, int adminId) {
+        String sql = "INSERT INTO users(username, password, roles, status) VALUES(?, ?, ?, ?)";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, username);
+            pstmt.setString(2, password);
+            pstmt.setString(3, role.toUpperCase());
+            pstmt.setString(4, status.toUpperCase());
+
+            if (pstmt.executeUpdate() > 0) {
+                logDao.logAction(adminId, "USER_ADDED",
+                        "Admin ID " + adminId + " added user " + username + " as " + role + " / " + status);
+                return true;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error adding user: " + e.getMessage());
+        }
+        return false;
+    }
+
+    // ADDED: Delete user (audit log is recorded in AdminMenu.deleteUser)
+    public boolean deleteUser(int userId) {
+        String sql = "DELETE FROM users WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, userId);
+            int rowsDeleted = pstmt.executeUpdate();
+
+            if (rowsDeleted > 0) {
+                return true;
+            } else {
+                System.out.println(" -> ID NOT FOUND.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error deleting user: " + e.getMessage());
+        }
+        return false;
+    }
 }

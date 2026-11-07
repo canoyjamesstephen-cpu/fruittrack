@@ -44,7 +44,9 @@ public class AdminMenu {
                 case 1 -> viewAllUser();
                 case 2 -> viewPendingUser();
                 case 3 -> approveUser(admin);
+                case 4 -> addUser(admin); // ADDED
                 case 5 -> updateUser(admin);
+                case 6 -> deleteUser(admin); // FIXED: was DeleteUser()
                 case 7 -> viewAuditLogs();
                 case 8 -> {
                     // ADDED: Log the logout action into the database
@@ -103,6 +105,73 @@ public class AdminMenu {
         userDao.approveUser(userID, admin.id());
     }
 
+    // ADDED: Add user (admin creates an account directly)
+    private void addUser(User currentAdmin) {
+        System.out.println("\n--- Add New User (type 0 to cancel) ---");
+
+        List<User> users = userDao.getAllUsers();
+
+        // Username
+        String username;
+        while (true) {
+            System.out.print("Enter Username: ");
+            username = scanner.nextLine().trim();
+
+            if (username.equals("0")) {
+                System.out.println("-> Add User Cancelled.");
+                return;
+            }
+            if (username.isEmpty()) {
+                System.out.println("-> [ERROR] Username cannot be empty.");
+                continue;
+            }
+            if (username.contains(" ")) {
+                System.out.println("-> [ERROR] Username cannot contain spaces.");
+                continue;
+            }
+            final String check = username;
+            boolean taken = users.stream().anyMatch(u -> u.username().equalsIgnoreCase(check));
+            if (taken) {
+                System.out.println("-> [ERROR] Username already exists. Try another one.");
+                continue;
+            }
+            break;
+        }
+
+        // Password
+        String password;
+        while (true) {
+            System.out.print("Enter Password: ");
+            password = scanner.nextLine();
+            if (password.isEmpty()) {
+                System.out.println("-> [ERROR] Password cannot be empty.");
+                continue;
+            }
+            break;
+        }
+
+        // Role
+        String role = readValidRole();
+        if (role == null) {
+            System.out.println("-> Add User Cancelled.");
+            return;
+        }
+
+        // Status
+        String status = readValidStatus();
+        if (status == null) {
+            System.out.println("-> Add User Cancelled.");
+            return;
+        }
+
+        boolean added = userDao.addUser(username, password, role, status, currentAdmin.id());
+        if (added) {
+            System.out.println("-> SUCCESS: User '" + username + "' added as " + role + " / " + status + ".");
+        } else {
+            System.out.println("-> [ERROR] Failed to add user.");
+        }
+    }
+
     private void updateUser(User currentAdmin) {
         List<User> users = userDao.getAllUsers();
         displayUserTable(users, "ALL REGISTERED USER");
@@ -145,6 +214,64 @@ public class AdminMenu {
             System.out.println("-> SUCCESS: User ID " + targetUserId + " is now " + newRole + " / " + newStatus + ".");
         } else {
             System.out.println("-> [ERROR] Update failed.");
+        }
+    }
+
+    // ADDED: Delete user
+    private void deleteUser(User currentAdmin) {
+        List<User> users = userDao.getAllUsers();
+        displayUserTable(users, "ALL REGISTERED USER");
+
+        if (users.isEmpty()) {
+            return;
+        }
+
+        int targetUserId = readIntInput("Enter User ID to delete (or 0 to cancel): ");
+        if (targetUserId == 0) {
+            System.out.println("-> Delete Cancelled.");
+            return;
+        }
+
+        if (targetUserId == currentAdmin.id()) {
+            System.out.println("WARNING: You cannot delete the currently active admin account.");
+            return;
+        }
+
+        User target = users.stream()
+                .filter(u -> u.id() == targetUserId)
+                .findFirst()
+                .orElse(null);
+
+        if (target == null) {
+            System.out.println("[ERROR] User ID not found.");
+            return;
+        }
+
+        // ADDED: Prevent deleting the last remaining admin
+        if (target.roles().toString().equalsIgnoreCase("ADMIN")) {
+            long adminCount = users.stream()
+                    .filter(u -> u.roles().toString().equalsIgnoreCase("ADMIN"))
+                    .count();
+            if (adminCount <= 1) {
+                System.out.println("[ERROR] Cannot delete the last remaining admin.");
+                return;
+            }
+        }
+
+        System.out.print("Are you sure you want to delete '" + target.username() + "'? (Y/N): ");
+        String confirm = scanner.nextLine().trim().toUpperCase();
+        if (!confirm.equals("Y")) {
+            System.out.println("-> Delete Cancelled.");
+            return;
+        }
+
+        boolean deleted = userDao.deleteUser(targetUserId);
+        if (deleted) {
+            logDao.logAction(currentAdmin.id(), "USER_DELETED",
+                    "Admin " + currentAdmin.username() + " deleted user " + target.username() + " (ID: " + targetUserId + ").");
+            System.out.println("-> SUCCESS: User '" + target.username() + "' has been deleted.");
+        } else {
+            System.out.println("-> [ERROR] Delete failed.");
         }
     }
 
