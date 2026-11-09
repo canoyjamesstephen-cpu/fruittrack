@@ -38,7 +38,7 @@ public class Authentication {
                     System.out.print("Enter Password: ");
                     String newPass = sc.nextLine();
 
-                    System.out.print("Select Role: [1] Admin [2] Dispatcher [3] Driver: ");
+                    System.out.print("Select Role: [1] Admin [2] Dispatcher [3] Driver [4] Customer: ");
                     String roleChoice = sc.nextLine().trim();
                     String role;
 
@@ -46,10 +46,15 @@ public class Authentication {
                         case "1" -> role = "ADMIN";
                         case "2" -> role = "DISPATCHER";
                         case "3" -> role = "DRIVER";
+                        case "4" -> role = "CUSTOMER"; // ADDED
                         default -> role = null;
                     }
                     if (role != null) {
-                        userDao.registerUser(newUser, newPass, role);
+                        if (role.equals("CUSTOMER")) {
+                            userDao.registerCustomer(newUser, newPass); // ADDED: customers are auto-approved
+                        } else {
+                            userDao.registerUser(newUser, newPass, role);
+                        }
                     } else {
                         System.out.println("-> [ERROR] Invalid Role Selection!");
                     }
@@ -78,6 +83,9 @@ public class Authentication {
             logDao.logAction(user.id(), "USER_LOGIN", "User " + user.username() + " (ID: " + user.id() + ") logged in.");
             switch (user.roles()){
                 case "ADMIN" -> new AdminMenu(userDao, sc).display(user);
+                case "DISPATCHER" -> new DispatcherMenu(userDao, sc).display(user); // ADDED
+                case "DRIVER" -> new DriverMenu(sc).display(user);                  // ADDED
+                case "CUSTOMER" -> new CustomerMenu(userDao, sc).display(user);     // ADDED
                 default -> System.out.println("-> Account roles not found or unauthorized view!");
             }
         }

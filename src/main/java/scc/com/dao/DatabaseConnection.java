@@ -9,7 +9,7 @@ import java.sql.Statement;
 public class DatabaseConnection {
 
 
-    private static final String DB_FILE = "activity_logs fruittrack.db";
+    private static final String DB_FILE = "fruittrack.db";
 
     private static final String DB_URL = "jdbc:sqlite:" + DB_FILE;
     private static boolean pathPrinted = false;
